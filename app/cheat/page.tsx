@@ -185,7 +185,7 @@ export default function CheatPage() {
           <div className="mt-4 pt-4 border-t border-[#f5f5f7]">
             <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-2">Most used in worship</p>
             <div className="flex gap-2">
-              {[0, 3, 4].map((i) => (
+              {[0, 3, 4, 5].map((i) => (
                 <div key={i} className="flex-1 bg-blue-50 text-blue-600 rounded-xl py-2 text-center">
                   <p className="text-xs text-blue-300 mb-0.5">{i + 1}</p>
                   <p className="font-bold text-sm">{SCALE_MAP[selectedKey][i]}</p>
