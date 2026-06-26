@@ -61,6 +61,17 @@ const WORSHIP_PIANO: Record<string, { notes: string[]; label: string }> = {
   "Adim":  { notes: ["A3","C4","Eb4"],                label: "Adim" },
 };
 
+// Capo recommendations for hard keys — G, C (Cadd9), D (Dsus2), E shapes only
+const CAPO_MAP: Record<string, { capo: number; shape: string; key: string }> = {
+  Ab: { capo: 4, shape: "G shape",     key: "E" },
+  Bb: { capo: 3, shape: "G shape",     key: "G" },
+  B:  { capo: 4, shape: "G shape",     key: "G" },
+  Db: { capo: 1, shape: "C shape",     key: "C" },
+  Eb: { capo: 3, shape: "C shape",     key: "C" },
+  F:  { capo: 3, shape: "D shape",     key: "D" },
+  "F#": { capo: 2, shape: "E shape",   key: "E" },
+};
+
 const PROGRESSIONS = [
   { label: "1 · 5 · 6 · 4",  nums: [1, 5, 6, 4] },
   { label: "1 · 4 · 5 · 1",  nums: [1, 4, 5, 1] },
@@ -141,6 +152,19 @@ export default function PlayPage() {
         </div>
       </div>
 
+      {/* Capo tip — guitar only, hard keys only */}
+      {instrument === "Guitar" && CAPO_MAP[key] && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-4 flex items-center gap-3">
+          <span className="text-xl">🎸</span>
+          <div>
+            <p className="text-sm font-semibold text-amber-800">
+              Capo {CAPO_MAP[key].capo} — play {CAPO_MAP[key].shape}
+            </p>
+            <p className="text-xs text-amber-600">Diagrams shown as open {CAPO_MAP[key].shape} shapes</p>
+          </div>
+        </div>
+      )}
+
       {/* Chord cards */}
       <div className="grid grid-cols-4 gap-3 mb-4">
         {progression.nums.map((num, i) => {
@@ -176,8 +200,12 @@ export default function PlayPage() {
       {activeIdx !== null && (() => {
         const num = progression.nums[activeIdx];
         const chordName = getChordName(num, key);
+        const capo = CAPO_MAP[key];
+        // For guitar in capo keys, show the open shape from the capo key instead
+        const guitarLookupKey = instrument === "Guitar" && capo ? capo.key : key;
+        const guitarChordName = getChordName(num, guitarLookupKey);
         const pianoVoicing = WORSHIP_PIANO[chordName];
-        const guitarShape = GUITAR_CHORDS[guitarKey(chordName)];
+        const guitarShape = GUITAR_CHORDS[guitarKey(guitarChordName)];
 
         return (
           <div className="bg-white rounded-2xl p-6 shadow-sm">
@@ -191,7 +219,9 @@ export default function PlayPage() {
                   <p className="text-xs text-blue-500 mt-0.5">{pianoVoicing.label}</p>
                 )}
                 {instrument === "Guitar" && guitarShape && (
-                  <p className="text-xs text-blue-500 mt-0.5">{guitarShape.name} shape</p>
+                  <p className="text-xs text-blue-500 mt-0.5">
+                    {guitarShape.name} shape{capo ? ` (capo ${capo.capo})` : ""}
+                  </p>
                 )}
               </div>
               <button onClick={() => setActiveIdx(null)} className="text-gray-300 hover:text-gray-500 text-xl">✕</button>
