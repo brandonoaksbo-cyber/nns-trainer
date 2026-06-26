@@ -86,7 +86,12 @@ export default function EarPage() {
   const [levelIdx, setLevelIdx] = useState(0);
   const level = LEVELS[levelIdx];
 
-  const [round, setRound] = useState(() => buildRound(level.chords));
+  const [round, setRound] = useState<ReturnType<typeof buildRound> | null>(null);
+
+  useEffect(() => {
+    setRound(buildRound(LEVELS[0].chords));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [selected, setSelected] = useState<string | null>(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [playing, setPlaying] = useState<"ref" | "chord" | null>(null);
@@ -169,7 +174,7 @@ export default function EarPage() {
   }, [level.chords, play]);
 
   function handleSelect(label: string) {
-    if (selected !== null) return;
+    if (selected !== null || !round) return;
     setSelected(label);
     setScore(s => ({ correct: s.correct + (label === round.chord.label ? 1 : 0), total: s.total + 1 }));
   }
@@ -186,6 +191,7 @@ export default function EarPage() {
     setSelected(null);
   }
 
+  if (!round) return null;
   const isCorrect = selected === round.chord.label;
 
   return (

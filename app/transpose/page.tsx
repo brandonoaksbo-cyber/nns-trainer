@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 
 const SCALE_MAP: Record<string, string[]> = {
@@ -43,10 +43,16 @@ function buildRound(progNums: number[]) {
 
 export default function TransposePage() {
   const [progIdx, setProgIdx] = useState(0);
-  const [round, setRound] = useState(() => buildRound(PROGRESSIONS[0].nums));
+  const [round, setRound] = useState<ReturnType<typeof buildRound> | null>(null);
+
+  useEffect(() => {
+    setRound(buildRound(PROGRESSIONS[0].nums));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [revealed, setRevealed] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
 
+  if (!round) return null;
   const progression = PROGRESSIONS[progIdx];
   const { fromKey, toKey } = round;
 
