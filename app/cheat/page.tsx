@@ -147,9 +147,6 @@ export default function CheatPage() {
             <text x={CX} y={CY + 4} textAnchor="middle" fontSize={9} fill="#d1d5db">tap a key</text>
           )}
 
-          {/* Legend dot */}
-          <circle cx={20} cy={288} r={4} fill="#eff6ff" stroke="#3b82f6" strokeWidth={1.5} />
-          <text x={28} y={292} fontSize={7} fill="#9ca3af">Common worship key</text>
         </svg>
       </div>
 
