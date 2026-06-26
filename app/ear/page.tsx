@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 
 type Chord = { label: string; notes: string[] };
@@ -95,28 +95,25 @@ export default function EarPage() {
 
   const samplerRef = useRef<import("tone").Sampler | null>(null);
   const loadedInstrumentRef = useRef<Instrument | null>(null);
+  const toneRef = useRef<typeof import("tone") | null>(null);
 
-  const getSampler = useCallback(async (inst: Instrument) => {
-    const Tone = await import("tone");
-    await Tone.start();
-
-    if (samplerRef.current && loadedInstrumentRef.current === inst) {
-      return samplerRef.current;
-    }
-
-    // Dispose old sampler
-    if (samplerRef.current) {
-      samplerRef.current.dispose();
-      samplerRef.current = null;
-    }
-
+  // Eagerly load sampler whenever instrument changes
+  useEffect(() => {
+    let cancelled = false;
     setLoading(true);
-    const config = SAMPLER_CONFIGS[inst];
 
-    return new Promise<import("tone").Sampler>((resolve, reject) => {
+    (async () => {
+      const Tone = await import("tone");
+      toneRef.current = Tone;
+
+      if (samplerRef.current) {
+        samplerRef.current.dispose();
+        samplerRef.current = null;
+      }
+
+      const config = SAMPLER_CONFIGS[instrument];
       const timeout = setTimeout(() => {
-        setLoading(false);
-        reject(new Error("Samples timed out"));
+        if (!cancelled) setLoading(false);
       }, 10000);
 
       const s = new Tone.Sampler({
@@ -124,32 +121,39 @@ export default function EarPage() {
         baseUrl: config.baseUrl,
         onload: () => {
           clearTimeout(timeout);
-          samplerRef.current = s;
-          loadedInstrumentRef.current = inst;
-          setLoading(false);
-          resolve(s);
+          if (!cancelled) {
+            samplerRef.current = s;
+            loadedInstrumentRef.current = instrument;
+            setLoading(false);
+          }
         },
       }).toDestination();
-    });
+    })();
+
+    return () => { cancelled = true; };
+  }, [instrument]);
+
+  const getSampler = useCallback(async () => {
+    // Unlock audio context directly in the gesture — must happen first
+    if (toneRef.current) await toneRef.current.start();
+    return samplerRef.current;
   }, []);
 
   const play = useCallback(async (notes: string[], tag: "ref" | "chord") => {
     if (playing !== null) return;
     setPlaying(tag);
     try {
-      const sampler = await getSampler(instrument);
-      sampler.triggerAttackRelease(notes, "2n");
-      setTimeout(() => setPlaying(null), 1400);
-    } catch {
-      setPlaying(null);
-    }
-  }, [playing, instrument, getSampler]);
+      const sampler = await getSampler();
+      if (sampler) sampler.triggerAttackRelease(notes, "2n");
+    } catch { /* ignore */ }
+    setTimeout(() => setPlaying(null), 1400);
+  }, [playing, getSampler]);
 
   const next = useCallback(() => {
     const newRound = buildRound(level.chords);
     setRound(newRound);
     setSelected(null);
-    setTimeout(() => play(newRound.chord.notes, "chord"), 300);
+    play(newRound.chord.notes, "chord");
   }, [level.chords, play]);
 
   function handleSelect(label: string) {
