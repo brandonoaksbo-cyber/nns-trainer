@@ -79,11 +79,11 @@ const CAPO_MAP: Record<string, { capo: number; shape: string; key: string }> = {
 
 const PROGRESSIONS = [
   { label: "1 · 5 · 6 · 4",  nums: [1, 5, 6, 4] },
-  { label: "1 · 4 · 5 · 1",  nums: [1, 4, 5, 1] },
   { label: "1 · 6 · 4 · 5",  nums: [1, 6, 4, 5] },
-  { label: "1 · 4 · 1 · 5",  nums: [1, 4, 1, 5] },
   { label: "6 · 4 · 1 · 5",  nums: [6, 4, 1, 5] },
-  { label: "1 · 2 · 4 · 5",  nums: [1, 2, 4, 5] },
+  { label: "6 · 2 · 4 · 5",  nums: [6, 2, 4, 5] },
+  { label: "1 · 3 · 6 · 4",  nums: [1, 3, 6, 4] },
+  { label: "1 · 2 · 6 · 4",  nums: [1, 2, 6, 4] },
 ];
 
 function getChordName(num: number, key: string): string {
