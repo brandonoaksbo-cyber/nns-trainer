@@ -92,12 +92,12 @@ export default function EarPage() {
   const [playing, setPlaying] = useState<"ref" | "chord" | null>(null);
   const [instrument, setInstrument] = useState<Instrument>("piano");
   const [loading, setLoading] = useState(false);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
 
   const samplerRef = useRef<import("tone").Sampler | null>(null);
-  const loadedInstrumentRef = useRef<Instrument | null>(null);
   const toneRef = useRef<typeof import("tone") | null>(null);
 
-  // Eagerly load sampler whenever instrument changes
+  // Load Tone.js and sampler eagerly on instrument change
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -112,20 +112,14 @@ export default function EarPage() {
       }
 
       const config = SAMPLER_CONFIGS[instrument];
-      const timeout = setTimeout(() => {
-        if (!cancelled) setLoading(false);
-      }, 10000);
+      const timeout = setTimeout(() => { if (!cancelled) setLoading(false); }, 10000);
 
       const s = new Tone.Sampler({
         urls: config.urls,
         baseUrl: config.baseUrl,
         onload: () => {
           clearTimeout(timeout);
-          if (!cancelled) {
-            samplerRef.current = s;
-            loadedInstrumentRef.current = instrument;
-            setLoading(false);
-          }
+          if (!cancelled) { samplerRef.current = s; setLoading(false); }
         },
       }).toDestination();
     })();
@@ -133,21 +127,39 @@ export default function EarPage() {
     return () => { cancelled = true; };
   }, [instrument]);
 
-  const getSampler = useCallback(async () => {
-    // Unlock audio context directly in the gesture — must happen first
-    if (toneRef.current) await toneRef.current.start();
-    return samplerRef.current;
-  }, []);
-
-  const play = useCallback(async (notes: string[], tag: "ref" | "chord") => {
+  // iOS requires AudioContext to be resumed synchronously inside a direct user tap.
+  // We show a one-time "Enable Audio" button that does this before anything else.
+  const unlockAndPlay = useCallback(async (notes: string[], tag: "ref" | "chord") => {
     if (playing !== null) return;
+
+    // Step 1 — resume AudioContext synchronously in the gesture
+    const Tone = toneRef.current;
+    if (Tone) {
+      const ctx = Tone.getContext().rawContext as AudioContext;
+      if (ctx.state !== "running") {
+        try { ctx.resume(); } catch { /* ignore */ }
+      }
+    }
+
     setPlaying(tag);
+    // Step 2 — trigger sampler (already loaded)
     try {
-      const sampler = await getSampler();
-      if (sampler) sampler.triggerAttackRelease(notes, "2n");
+      if (Tone) await Tone.start();
+      if (samplerRef.current) samplerRef.current.triggerAttackRelease(notes, "2n");
     } catch { /* ignore */ }
     setTimeout(() => setPlaying(null), 1400);
-  }, [playing, getSampler]);
+  }, [playing]);
+
+  const handleUnlock = useCallback(async () => {
+    const Tone = toneRef.current;
+    if (!Tone) return;
+    const ctx = Tone.getContext().rawContext as AudioContext;
+    try { await ctx.resume(); } catch { /* ignore */ }
+    await Tone.start();
+    setAudioUnlocked(true);
+  }, []);
+
+  const play = unlockAndPlay;
 
   const next = useCallback(() => {
     const newRound = buildRound(level.chords);
@@ -208,6 +220,15 @@ export default function EarPage() {
 
       {loading && (
         <p className="text-xs text-center text-gray-400 mb-3">Loading samples…</p>
+      )}
+
+      {!audioUnlocked && !loading && (
+        <button
+          onClick={async () => { await handleUnlock(); }}
+          className="w-full bg-[#1d1d1f] text-white rounded-2xl py-4 font-semibold mb-4 active:scale-95 transition"
+        >
+          🔊 Tap to Enable Audio
+        </button>
       )}
 
       {/* Level selector */}
