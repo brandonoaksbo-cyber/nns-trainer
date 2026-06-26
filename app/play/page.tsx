@@ -16,6 +16,7 @@ const SCALE_MAP: Record<string, string[]> = {
   Bb: ["Bb","Cm","Dm","Eb","F","Gm","Adim"],
   Eb: ["Eb","Fm","Gm","Ab","Bb","Cm","Ddim"],
   Ab: ["Ab","Bbm","Cm","Db","Eb","Fm","Gdim"],
+  "F#": ["F#","G#m","A#m","B","C#","D#m","Fdim"],
 };
 
 const KEYS = Object.keys(SCALE_MAP);
@@ -48,6 +49,10 @@ const WORSHIP_PIANO: Record<string, { notes: string[]; label: string }> = {
   "Cm":   { notes: ["C3","G3","Eb4","G4"],            label: "Cm voicing" },
   "Bbm":  { notes: ["Bb3","F4","Ab4","Db4"],          label: "Bbm voicing" },
   "C#m":  { notes: ["C#3","G#3","B3","E4","G#4"],     label: "C#m7 voicing" },
+  "C#":   { notes: ["C#3","G#3","C#4","F4"],           label: "C# voicing" },
+  "A#m":  { notes: ["A#3","F4","G#4","C#4"],           label: "A#m voicing" },
+  "D#m":  { notes: ["D#3","A#3","C#4","F#4"],          label: "D#m voicing" },
+  "Fdim": { notes: ["F3","G#3","B3"],                   label: "Fdim" },
   "F#m":  { notes: ["F#3","C#4","A4","E4"],           label: "F#m7 voicing" },
   "G#m":  { notes: ["G#3","D#4","F#4","B4"],          label: "G#m7 voicing" },
   "Ebm":  { notes: ["Eb3","Bb3","Db4","Gb4"],         label: "Ebm voicing" },
