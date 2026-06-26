@@ -37,7 +37,7 @@ export default function LearnPage() {
           <h2 className="text-xl font-bold text-[#1d1d1f]">Count to 7</h2>
         </div>
         <p className="text-gray-500 mb-5 leading-relaxed">
-          Every song is built on 7 chords. We number them 1 through 7.
+          Every major key has 7 notes — and each one becomes a chord.
         </p>
         <div className="flex gap-2 justify-center">
           {NUMBERS.map((n) => (
@@ -122,10 +122,10 @@ export default function LearnPage() {
           <h2 className="text-xl font-bold text-[#1d1d1f]">Why not just use letters?</h2>
         </div>
         <p className="text-gray-500 mb-4 leading-relaxed">
-          If your singer says <em>"let's go up a step"</em>, a chord chart written in letters means rewriting the whole thing.
+          Numbers are a shared language for your whole team. Instead of saying <em>"play a G"</em> — which means nothing in a different key — you say <em>"play the 5."</em> <strong className="text-[#1d1d1f]">Everyone knows exactly where to go, no matter what key you're in.</strong>
         </p>
         <p className="text-gray-500 mb-4 leading-relaxed">
-          But a chart written in numbers? <strong className="text-[#1d1d1f]">It never changes.</strong> Just move your fingers to the new key.
+          It also trains your ear. Once you know what a 1→4→5 feels like, you'll start hearing it everywhere — and learning new songs gets much faster.
         </p>
         <div className="bg-[#f5f5f7] rounded-2xl p-5">
           <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">Same chart, any key</p>

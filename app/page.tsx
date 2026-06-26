@@ -6,6 +6,7 @@ const modules = [
   { href: "/transpose", icon: "⇄",  label: "Transpose",     sub: "Quiz across keys",                  color: "text-orange-500" },
   { href: "/ear",       icon: "◎",  label: "Ear Training",  sub: "Identify chords by sound",          color: "text-purple-500" },
   { href: "/play",      icon: "♫",  label: "Play Along",    sub: "See chord shapes on your instrument", color: "text-rose-500" },
+  { href: "/cheat",     icon: "◉",  label: "Circle of 5ths", sub: "Interactive key reference",          color: "text-teal-500" },
 ];
 
 export default function Home() {
