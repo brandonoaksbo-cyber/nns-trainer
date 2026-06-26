@@ -233,7 +233,8 @@ export default function EarPage() {
           onClick={async () => { await handleUnlock(); }}
           className="w-full bg-[#1d1d1f] text-white rounded-2xl py-4 font-semibold mb-4 active:scale-95 transition"
         >
-          🔊 Tap to Enable Audio · Make sure ringer is on
+          <span className="block font-semibold">🔊 Tap to Enable Audio</span>
+          <span className="block text-xs text-gray-400 font-normal mt-0.5">Make sure your ringer is on</span>
         </button>
       )}
 
