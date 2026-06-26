@@ -52,14 +52,14 @@ export default function TransposePage() {
   const [revealed, setRevealed] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
 
+  const next = useCallback(() => {
+    setRound(buildRound(PROGRESSIONS[progIdx].nums));
+    setRevealed(false);
+  }, [progIdx]);
+
   if (!round) return null;
   const progression = PROGRESSIONS[progIdx];
   const { fromKey, toKey } = round;
-
-  const next = useCallback(() => {
-    setRound(buildRound(progression.nums));
-    setRevealed(false);
-  }, [progression.nums]);
 
   function handleReveal() {
     if (!revealed) {
