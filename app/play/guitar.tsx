@@ -18,7 +18,7 @@ export const GUITAR_CHORDS: Record<string, GuitarShape> = {
   "Dm":   { name: "Dm7",     frets: [-1, -1, 0, 2, 1, 1] },          // xx0211 — lighter, airy
 
   // E family
-  "E":    { name: "Eadd9",   frets: [0, 2, 2, 1, 0, 2] },            // 022102 — adds the 9th
+  "E":    { name: "E",       frets: [0, 2, 2, 1, 0, 0] },            // 022100 — open B and e ring out
   "Em":   { name: "Em7",     frets: [0, 2, 2, 0, 3, 0] },            // 022030 — beautiful worship voicing
   "Eb":   { name: "Eb",      frets: [-1, -1, 5, 3, 4, 3], baseFret: 3 },
 
@@ -36,16 +36,16 @@ export const GUITAR_CHORDS: Record<string, GuitarShape> = {
   "Ab":   { name: "Ab",      frets: [-1, -1, 1, 1, 1, 4], barre: 4, baseFret: 4 },
 
   // B family
-  "B":    { name: "Bsus4",   frets: [-1, 2, 4, 4, 5, 2], barre: 2, baseFret: 2 },
+  "B":    { name: "Bsus4",   frets: [-1, 2, 4, 4, 0, 0] },            // x24400 — no barre, open B and e
   "Bm":   { name: "Bm7",     frets: [-1, 2, 0, 2, 0, 2] },           // x20202 — lighter barre-free option
   "Bb":   { name: "Bb",      frets: [-1, 1, 3, 3, 3, 1], barre: 1, baseFret: 1 },
 
   // Flat/sharp keys
   "Db":   { name: "Db",      frets: [-1, 4, 3, 1, 2, 1], barre: 1, baseFret: 1 },
   "F#":   { name: "F#",      frets: [2, 4, 4, 3, 2, 2], barre: 2, baseFret: 2 },
-  "F#m":  { name: "F#m7",    frets: [2, 0, 4, 2, 2, 2], barre: 2, baseFret: 2 },
-  "C#m":  { name: "C#m7",    frets: [-1, 4, 2, 4, 2, 2], baseFret: 4 },
-  "G#m":  { name: "G#m",     frets: [4, 6, 6, 4, 4, 4], barre: 4, baseFret: 4 },
+  "F#m":  { name: "F#m7",    frets: [-1, -1, 4, 2, 0, 0] },           // xx4200 — no barre, open B and e
+  "C#m":  { name: "C#m7",    frets: [-1, 4, 6, 6, 0, 0], baseFret: 4 }, // open B and e
+  "G#m":  { name: "G#m",     frets: [-1, -1, 6, 4, 0, 0], baseFret: 4 }, // open B and e
   "Bbm":  { name: "Bbm",     frets: [-1, 1, 3, 3, 2, 1], barre: 1, baseFret: 1 },
 
   // Dim
