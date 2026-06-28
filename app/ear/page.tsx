@@ -75,8 +75,9 @@ function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function buildRound(chords: Chord[]) {
-  const chord = pickRandom(chords);
+function buildRound(chords: Chord[], lastLabel?: string) {
+  const pool = chords.length > 1 ? chords.filter(c => c.label !== lastLabel) : chords;
+  const chord = pickRandom(pool);
   const wrongs = chords.filter(c => c.label !== chord.label).sort(() => Math.random() - 0.5).slice(0, 3);
   const options = [...wrongs, chord].sort(() => Math.random() - 0.5);
   return { chord, options };
@@ -167,11 +168,11 @@ export default function EarPage() {
   const play = unlockAndPlay;
 
   const next = useCallback(() => {
-    const newRound = buildRound(level.chords);
+    const newRound = buildRound(level.chords, round?.chord.label);
     setRound(newRound);
     setSelected(null);
     play(newRound.chord.notes, "chord");
-  }, [level.chords, play]);
+  }, [level.chords, round, play]);
 
   function handleSelect(label: string) {
     if (selected !== null || !round) return;
