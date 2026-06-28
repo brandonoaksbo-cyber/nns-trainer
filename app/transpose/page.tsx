@@ -107,7 +107,7 @@ export default function TransposePage() {
       {/* From key */}
       <div className="bg-white rounded-2xl p-6 shadow-sm mb-3">
         <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-4">
-          Original — Key of <span className="text-orange-500">{fromKey}</span>
+          Original — Key of <span className="text-orange-500 normal-case">{fromKey}</span>
         </p>
         <div className="grid grid-cols-4 gap-3">
           {progression.nums.map((num, i) => (
@@ -127,7 +127,7 @@ export default function TransposePage() {
       {/* To key */}
       <div className={`rounded-2xl p-6 shadow-sm mb-6 transition ${revealed ? "bg-white" : "bg-white"}`}>
         <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-4">
-          Transposed — Key of <span className="text-blue-500">{toKey}</span>
+          Transposed — Key of <span className="text-blue-500 normal-case">{toKey}</span>
         </p>
         <div className="grid grid-cols-4 gap-3">
           {progression.nums.map((num, i) => (

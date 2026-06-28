@@ -194,7 +194,7 @@ export default function ReadPage() {
       {/* Scale reference */}
       {revealed && (
         <div className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">Key of {key}</p>
+          <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">Key of <span className="normal-case">{key}</span></p>
           <div className="flex gap-3">
             {SCALE_MAP[key].map((chord, i) => (
               <div key={i} className="text-center flex-1">

@@ -217,7 +217,7 @@ export default function PlayPage() {
             <div className="flex justify-between items-start mb-5">
               <div>
                 <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-1">
-                  {key} · {num} chord
+                  <span className="normal-case">{key}</span> · {num} chord
                 </p>
                 <p className="text-2xl font-bold text-[#1d1d1f]">{chordName}</p>
                 {instrument === "Piano" && pianoVoicing && (

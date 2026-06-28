@@ -155,7 +155,7 @@ export default function CheatPage() {
         <div className="bg-white rounded-3xl shadow-sm p-6 mb-4">
           <div className="flex justify-between items-start mb-5">
             <div>
-              <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-1">Key of {selectedKey}</p>
+              <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-1">Key of <span className="normal-case">{selectedKey}</span></p>
               <p className="text-xs text-gray-400">{SHARPS_FLATS[selectedKey]}</p>
             </div>
             <div className="text-right">
