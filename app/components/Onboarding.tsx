@@ -7,8 +7,8 @@ const STORAGE_KEY = "nns-onboarding-complete";
 const SCREENS = [
   {
     tag: "Welcome",
-    title: "The language of worship teams.",
-    body: "The Nashville Number System lets musicians play together in any key — no sheet music required. This app teaches you how.",
+    title: "How pros learn songs in minutes — not hours.",
+    body: "The Nashville Number System is the secret weapon worship musicians use to learn any song, in any key, on the spot.",
     visual: (
       <div className="flex justify-center gap-3 flex-wrap">
         {["1","4","5","6"].map((n) => (
