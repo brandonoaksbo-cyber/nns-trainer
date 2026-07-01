@@ -16,7 +16,7 @@ export default function Home() {
       <Onboarding />
       <main className="min-h-screen bg-[#f5f5f7] flex flex-col items-center justify-center px-6 py-16">
         <p className="text-sm font-semibold tracking-widest text-gray-400 uppercase mb-3">Worship Team</p>
-        <h1 className="text-5xl font-bold text-[#1d1d1f] tracking-tight mb-2 text-center">NNS Trainer</h1>
+        <h1 className="text-5xl font-bold text-[#1d1d1f] tracking-tight mb-2 text-center">Number System Trainer</h1>
         <p className="text-lg text-gray-500 mb-14 text-center">Nashville Number System</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg">
