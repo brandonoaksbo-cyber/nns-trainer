@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import PianoChord from "./piano";
+import { useEntitlement } from "../components/EntitlementProvider";
+import Paywall from "../components/Paywall";
 import GuitarChord, { GUITAR_CHORDS } from "./guitar";
 
 const SCALE_MAP: Record<string, string[]> = {
@@ -104,6 +106,9 @@ export default function PlayPage() {
   const [progIdx, setProgIdx] = useState(0);
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const { isUnlocked } = useEntitlement();
+
+  if (!isUnlocked) return <Paywall />;
 
   const progression = PROGRESSIONS[progIdx];
 

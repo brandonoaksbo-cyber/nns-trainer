@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Onboarding from "./components/Onboarding";
+import RestoreLink from "./components/RestoreLink";
 
 const modules = [
   { href: "/learn",     icon: "♩",  label: "Learn",          sub: "Start here — 5-step intro to how numbers work",       color: "text-blue-500" },
@@ -34,6 +35,7 @@ export default function Home() {
             </Link>
           ))}
         </div>
+        <RestoreLink />
       </main>
     </>
   );

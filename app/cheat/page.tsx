@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useEntitlement } from "../components/EntitlementProvider";
+import Paywall from "../components/Paywall";
 
 // Clockwise from top: C at 12 o'clock
 const CIRCLE_KEYS = ["C","G","D","A","E","B","F#","Db","Ab","Eb","Bb","F"];
@@ -78,6 +80,9 @@ function slicePath(i: number) {
 
 export default function CheatPage() {
   const [selectedKey, setSelectedKey] = useState<string | null>("G");
+  const { isUnlocked } = useEntitlement();
+
+  if (!isUnlocked) return <Paywall />;
 
   return (
     <main className="min-h-screen bg-[#f5f5f7] px-6 py-12 max-w-lg mx-auto">

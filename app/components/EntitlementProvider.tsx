@@ -1,0 +1,119 @@
+"use client";
+
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { Capacitor } from "@capacitor/core";
+
+// One-time non-consumable unlock. Family Sharing is enabled on this product
+// in App Store Connect, so "owned" can come from a family member's purchase.
+export const PRODUCT_ID = "com.brandonoaks.nnstrainer.fullunlock";
+
+// localStorage cache is a fast local read for first paint only — StoreKit is
+// re-checked on every launch so reinstalls/device changes stay correct.
+const CACHE_KEY = "nns-unlocked";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type Ctx = {
+  isUnlocked: boolean;
+  price: string | null;       // localized price from StoreKit — never hardcode
+  busy: "purchase" | "restore" | null;
+  isNative: boolean;
+  purchase: () => Promise<void>;
+  restore: () => Promise<void>;
+};
+
+const EntitlementContext = createContext<Ctx | null>(null);
+
+export function EntitlementProvider({ children }: { children: React.ReactNode }) {
+  const isNative = Capacitor.isNativePlatform();
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [price, setPrice] = useState<string | null>(null);
+  const [busy, setBusy] = useState<"purchase" | "restore" | null>(null);
+  const storeRef = useRef<any>(null);
+
+  useEffect(() => {
+    // The web version stays fully free — the unlock only applies in the iOS app.
+    if (!isNative) {
+      setIsUnlocked(true);
+      return;
+    }
+
+    // Fast paint from cache while StoreKit initializes
+    if (localStorage.getItem(CACHE_KEY) === "1") setIsUnlocked(true);
+
+    const markUnlocked = (owned: boolean) => {
+      setIsUnlocked(owned);
+      localStorage.setItem(CACHE_KEY, owned ? "1" : "0");
+    };
+
+    const init = () => {
+      const CdvPurchase = (window as any).CdvPurchase;
+      if (!CdvPurchase) return;
+      const { store, ProductType, Platform } = CdvPurchase;
+      storeRef.current = store;
+
+      store.register([{ id: PRODUCT_ID, type: ProductType.NON_CONSUMABLE, platform: Platform.APPLE_APPSTORE }]);
+
+      store
+        .when()
+        .approved((transaction: any) => transaction.verify())
+        .verified((receipt: any) => receipt.finish())
+        .productUpdated((product: any) => {
+          if (product.id === PRODUCT_ID) {
+            if (product.pricing?.price) setPrice(product.pricing.price);
+            if (product.owned) markUnlocked(true);
+          }
+        })
+        .receiptUpdated(() => {
+          const p = store.get(PRODUCT_ID, Platform.APPLE_APPSTORE);
+          if (p) markUnlocked(!!p.owned);
+        });
+
+      store.initialize([Platform.APPLE_APPSTORE]);
+    };
+
+    if ((window as any).CdvPurchase) init();
+    else document.addEventListener("deviceready", init, { once: true });
+  }, [isNative]);
+
+  const purchase = useCallback(async () => {
+    const CdvPurchase = (window as any).CdvPurchase;
+    const store = storeRef.current;
+    if (!store || !CdvPurchase) return;
+    const product = store.get(PRODUCT_ID, CdvPurchase.Platform.APPLE_APPSTORE);
+    const offer = product?.getOffer();
+    if (!offer) return;
+    setBusy("purchase");
+    try {
+      const err = await offer.order();
+      // User cancelling the sheet is not an error state — dismiss quietly
+      if (err && err.code !== CdvPurchase.ErrorCode.PAYMENT_CANCELLED) {
+        alert("Purchase didn't go through. Please try again.");
+      }
+    } finally {
+      setBusy(null);
+    }
+  }, []);
+
+  const restore = useCallback(async () => {
+    const store = storeRef.current;
+    if (!store) return;
+    setBusy("restore");
+    try {
+      await store.restorePurchases();
+    } finally {
+      setBusy(null);
+    }
+  }, []);
+
+  return (
+    <EntitlementContext.Provider value={{ isUnlocked, price, busy, isNative, purchase, restore }}>
+      {children}
+    </EntitlementContext.Provider>
+  );
+}
+
+export function useEntitlement() {
+  const ctx = useContext(EntitlementContext);
+  if (!ctx) throw new Error("useEntitlement must be used inside EntitlementProvider");
+  return ctx;
+}

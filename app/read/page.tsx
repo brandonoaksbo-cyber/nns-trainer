@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useEntitlement } from "../components/EntitlementProvider";
+import Paywall from "../components/Paywall";
+
+// Level 1 is free; levels 2-4 need the full unlock
+const FIRST_LOCKED_LEVEL = 1;
 
 const SCALE_MAP: Record<string, string[]> = {
   C:  ["C","Dm","Em","F","G","Am","Bdim"],
@@ -112,11 +117,17 @@ export default function ReadPage() {
   const [levelIdx, setLevelIdx] = useState(0);
   const [chartIdx, setChartIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const { isUnlocked } = useEntitlement();
 
   const level = LEVELS[levelIdx];
   const chart = level.charts[chartIdx];
 
   function changeLevel(idx: number) {
+    if (!isUnlocked && idx >= FIRST_LOCKED_LEVEL) {
+      setShowPaywall(true);
+      return;
+    }
     setLevelIdx(idx);
     setChartIdx(0);
     setRevealed(false);
@@ -151,11 +162,13 @@ export default function ReadPage() {
               i === levelIdx ? "bg-green-500 text-white shadow-sm" : "text-gray-400 hover:text-gray-600"
             }`}
           >
-            {l.title}
+            {!isUnlocked && i >= FIRST_LOCKED_LEVEL ? `🔒 ${l.title}` : l.title}
           </button>
         ))}
       </div>
       <p className="text-xs text-gray-400 text-center mb-6">{level.description}</p>
+
+      {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
 
       {/* Chart */}
       <div className="mb-2">

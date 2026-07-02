@@ -2,6 +2,11 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useEntitlement } from "../components/EntitlementProvider";
+import Paywall from "../components/Paywall";
+
+// Level 1 is free; levels 2-3 need the full unlock
+const FIRST_LOCKED_LEVEL = 1;
 
 type Chord = { label: string; notes: string[] };
 type Instrument = "piano" | "guitar";
@@ -85,6 +90,8 @@ function buildRound(chords: Chord[], lastLabel?: string) {
 
 export default function EarPage() {
   const [levelIdx, setLevelIdx] = useState(0);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const { isUnlocked } = useEntitlement();
   const level = LEVELS[levelIdx];
 
   const [round, setRound] = useState<ReturnType<typeof buildRound> | null>(null);
@@ -181,6 +188,10 @@ export default function EarPage() {
   }
 
   function changeLevel(idx: number) {
+    if (!isUnlocked && idx >= FIRST_LOCKED_LEVEL) {
+      setShowPaywall(true);
+      return;
+    }
     setLevelIdx(idx);
     setRound(buildRound(LEVELS[idx].chords));
     setSelected(null);
@@ -249,11 +260,13 @@ export default function EarPage() {
               i === levelIdx ? "bg-purple-500 text-white shadow-sm" : "text-gray-400 hover:text-gray-600"
             }`}
           >
-            {l.title}
+            {!isUnlocked && i >= FIRST_LOCKED_LEVEL ? `🔒 ${l.title}` : l.title}
           </button>
         ))}
       </div>
       <p className="text-xs text-gray-400 text-center mb-6">{level.description}</p>
+
+      {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
 
       {/* 1 chord reference */}
       <div className="bg-white rounded-2xl p-5 shadow-sm mb-3 flex items-center justify-between">

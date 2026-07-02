@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
+import { useEntitlement } from "../components/EntitlementProvider";
+import Paywall from "../components/Paywall";
 
 const SCALE_MAP: Record<string, string[]> = {
   C:  ["C","Dm","Em","F","G","Am","Bdim"],
@@ -57,6 +59,9 @@ export default function TransposePage() {
     setRevealed(false);
   }, [progIdx]);
 
+  const { isUnlocked } = useEntitlement();
+
+  if (!isUnlocked) return <Paywall />;
   if (!round) return null;
   const progression = PROGRESSIONS[progIdx];
   const { fromKey, toKey } = round;
