@@ -165,7 +165,7 @@ export default function PlayPage() {
             <p className="text-sm font-semibold text-amber-800">
               Capo {CAPO_MAP[key].capo} — play {CAPO_MAP[key].shape}
             </p>
-            <p className="text-xs text-amber-600">Diagrams shown as open {CAPO_MAP[key].shape} shapes</p>
+            <p className="text-xs text-amber-600">Diagrams shown as open {CAPO_MAP[key].shape}s</p>
           </div>
         </div>
       )}
