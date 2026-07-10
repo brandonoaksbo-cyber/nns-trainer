@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-const APP_STORE_URL = "APP_STORE_URL_PLACEHOLDER";
+const APP_STORE_URL = "https://apps.apple.com/us/app/number-system-trainer/id6786437503";
 
 export const metadata: Metadata = {
   title: "Number System Trainer — Learn Nashville Numbers",
