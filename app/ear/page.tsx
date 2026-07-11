@@ -94,6 +94,50 @@ const SAMPLER_CONFIGS: Record<Instrument, { baseUrl: string; urls: Record<string
   },
 };
 
+// ————— Practice stats (local-only, no accounts, no nagging) —————
+
+const STATS_KEY = "nns-ear-stats";
+
+type Stats = {
+  lastDate: string;            // "2026-07-11" — last day with ≥1 answer
+  dayStreak: number;           // consecutive practice days
+  bestDayStreak: number;
+  bestRuns: Record<number, number>; // levelIdx → best correct-in-a-row
+};
+
+const EMPTY_STATS: Stats = { lastDate: "", dayStreak: 0, bestDayStreak: 0, bestRuns: {} };
+
+function loadStats(): Stats {
+  try {
+    const raw = localStorage.getItem(STATS_KEY);
+    if (raw) return { ...EMPTY_STATS, ...JSON.parse(raw) };
+  } catch {}
+  return EMPTY_STATS;
+}
+
+function saveStats(s: Stats) {
+  try { localStorage.setItem(STATS_KEY, JSON.stringify(s)); } catch {}
+}
+
+function todayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function yesterdayStr(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Called on every answered question; bumps the day streak once per day.
+function bumpDayStreak(s: Stats): Stats {
+  const today = todayStr();
+  if (s.lastDate === today) return s;
+  const dayStreak = s.lastDate === yesterdayStr() ? s.dayStreak + 1 : 1;
+  return { ...s, lastDate: today, dayStreak, bestDayStreak: Math.max(dayStreak, s.bestDayStreak) };
+}
+
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -120,6 +164,11 @@ export default function EarPage() {
   }, []);
   const [selected, setSelected] = useState<string | null>(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [stats, setStats] = useState<Stats>(EMPTY_STATS);
+  const [run, setRun] = useState(0);
+  const [newBest, setNewBest] = useState(false);
+
+  useEffect(() => { setStats(loadStats()); }, []);
   const [playing, setPlaying] = useState<"ref" | "chord" | null>(null);
   const [instrument, setInstrument] = useState<Instrument>("piano");
   const [loading, setLoading] = useState(false);
@@ -202,7 +251,22 @@ export default function EarPage() {
   function handleSelect(label: string) {
     if (selected !== null || !round) return;
     setSelected(label);
-    setScore(s => ({ correct: s.correct + (label === round.chord.label ? 1 : 0), total: s.total + 1 }));
+    const correct = label === round.chord.label;
+    setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
+
+    const nextRun = correct ? run + 1 : 0;
+    setRun(nextRun);
+    setNewBest(false);
+    setStats(prev => {
+      let s = bumpDayStreak(prev);
+      const best = s.bestRuns[levelIdx] ?? 0;
+      if (correct && nextRun > best) {
+        s = { ...s, bestRuns: { ...s.bestRuns, [levelIdx]: nextRun } };
+        if (best > 0) setNewBest(true);
+      }
+      saveStats(s);
+      return s;
+    });
   }
 
   function changeLevel(idx: number) {
@@ -214,6 +278,8 @@ export default function EarPage() {
     setRound(buildRound(LEVELS[idx].chords));
     setSelected(null);
     setScore({ correct: 0, total: 0 });
+    setRun(0);
+    setNewBest(false);
   }
 
   function changeInstrument(inst: Instrument) {
@@ -233,9 +299,17 @@ export default function EarPage() {
           <h1 className="text-4xl font-bold text-[#1d1d1f] tracking-tight mb-1">Ear Training</h1>
           <p className="text-gray-500 text-sm">Key of C — what chord is this?</p>
         </div>
-        <div className="bg-white rounded-2xl px-4 py-3 shadow-sm text-center">
-          <p className="text-xl font-bold text-[#1d1d1f]">{score.correct}/{score.total}</p>
-          <p className="text-xs text-gray-400">score</p>
+        <div className="flex gap-2">
+          {stats.dayStreak > 0 && (
+            <div className="bg-white rounded-2xl px-4 py-3 shadow-sm text-center">
+              <p className="text-xl font-bold text-[#1d1d1f]">🔥 {stats.dayStreak}</p>
+              <p className="text-xs text-gray-400">day{stats.dayStreak === 1 ? "" : "s"}</p>
+            </div>
+          )}
+          <div className="bg-white rounded-2xl px-4 py-3 shadow-sm text-center">
+            <p className="text-xl font-bold text-[#1d1d1f]">{score.correct}/{score.total}</p>
+            <p className="text-xs text-gray-400">score</p>
+          </div>
         </div>
       </div>
 
@@ -282,7 +356,17 @@ export default function EarPage() {
           </button>
         ))}
       </div>
-      <p className="text-xs text-gray-400 text-center mb-6">{level.description}</p>
+      <p className="text-xs text-gray-400 text-center mb-3">{level.description}</p>
+
+      {/* Run vs. personal best — the only opponent is yesterday's you */}
+      <div className="flex justify-center gap-2 mb-6">
+        <span className={`text-xs font-semibold rounded-full px-3 py-1 ${run > 0 ? "bg-purple-100 text-purple-600" : "bg-white text-gray-400 shadow-sm"}`}>
+          Run: {run}
+        </span>
+        <span className="text-xs font-semibold rounded-full px-3 py-1 bg-white text-gray-400 shadow-sm">
+          Best: {stats.bestRuns[levelIdx] ?? 0}
+        </span>
+      </div>
 
       {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
 
@@ -341,7 +425,11 @@ export default function EarPage() {
 
       {selected !== null && (
         <p className={`text-center mb-4 font-semibold ${isCorrect ? "text-green-500" : "text-red-400"}`}>
-          {isCorrect ? `Correct! That's the ${round.chord.label}` : `That was the ${round.chord.label}`}
+          {isCorrect
+            ? newBest
+              ? `🎉 New best — ${run} in a row!`
+              : `Correct! That's the ${round.chord.label}`
+            : `That was the ${round.chord.label}`}
         </p>
       )}
 
