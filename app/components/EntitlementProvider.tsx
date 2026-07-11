@@ -16,6 +16,7 @@ type Ctx = {
   isUnlocked: boolean;
   price: string | null;       // localized price from StoreKit — never hardcode
   busy: "purchase" | "restore" | null;
+  ready: boolean;              // StoreKit catalog has loaded — gate the buy button on this
   isNative: boolean;
   purchase: () => Promise<void>;
   restore: () => Promise<void>;
@@ -28,12 +29,14 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [price, setPrice] = useState<string | null>(null);
   const [busy, setBusy] = useState<"purchase" | "restore" | null>(null);
+  const [ready, setReady] = useState(false);
   const storeRef = useRef<any>(null);
 
   useEffect(() => {
     // The web version stays fully free — the unlock only applies in the iOS app.
     if (!isNative) {
       setIsUnlocked(true);
+      setReady(true);
       return;
     }
 
@@ -68,7 +71,7 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
           if (p) markUnlocked(!!p.owned);
         });
 
-      store.initialize([Platform.APPLE_APPSTORE]);
+      store.initialize([Platform.APPLE_APPSTORE]).then(() => setReady(true));
     };
 
     if ((window as any).CdvPurchase) init();
@@ -78,10 +81,18 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
   const purchase = useCallback(async () => {
     const CdvPurchase = (window as any).CdvPurchase;
     const store = storeRef.current;
-    if (!store || !CdvPurchase) return;
+    if (!store || !CdvPurchase) {
+      alert("Store isn't ready yet. Please try again in a moment.");
+      return;
+    }
     const product = store.get(PRODUCT_ID, CdvPurchase.Platform.APPLE_APPSTORE);
     const offer = product?.getOffer();
-    if (!offer) return;
+    if (!offer) {
+      // Never fail silently — this is exactly the bug Apple's reviewer hit:
+      // tapping the button with no product loaded yet produced no feedback at all.
+      alert("Store isn't ready yet. Please try again in a moment.");
+      return;
+    }
     setBusy("purchase");
     try {
       const err = await offer.order();
@@ -106,7 +117,7 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
   }, []);
 
   return (
-    <EntitlementContext.Provider value={{ isUnlocked, price, busy, isNative, purchase, restore }}>
+    <EntitlementContext.Provider value={{ isUnlocked, price, busy, ready, isNative, purchase, restore }}>
       {children}
     </EntitlementContext.Provider>
   );

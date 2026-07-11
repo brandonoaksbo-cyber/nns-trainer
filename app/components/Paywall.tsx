@@ -14,7 +14,11 @@ const INCLUDED = [
 // Full-screen paywall. Rendered in place of locked content (module gate) or
 // on top of it (level gate, via onClose).
 export default function Paywall({ onClose }: { onClose?: () => void }) {
-  const { price, busy, purchase, restore } = useEntitlement();
+  const { price, busy, ready, isNative, purchase, restore } = useEntitlement();
+  // On native, wait for StoreKit to finish loading the product catalog before
+  // the button is tappable — this is what caused Apple's review rejection
+  // (tapping before the catalog loaded produced no response at all).
+  const buyDisabled = busy !== null || (isNative && !ready);
 
   return (
     <div className="fixed inset-0 z-50 bg-[#f5f5f7] overflow-y-auto">
@@ -52,14 +56,20 @@ export default function Paywall({ onClose }: { onClose?: () => void }) {
         <div className="mt-auto">
           <button
             onClick={purchase}
-            disabled={busy !== null}
+            disabled={buyDisabled}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-2xl py-4 font-semibold transition active:scale-95 disabled:opacity-60"
           >
-            {busy === "purchase" ? "Opening…" : price ? `Unlock Everything — ${price}` : "Unlock Everything"}
+            {busy === "purchase"
+              ? "Opening…"
+              : isNative && !ready
+              ? "Loading…"
+              : price
+              ? `Unlock Everything — ${price}`
+              : "Unlock Everything"}
           </button>
           <button
             onClick={restore}
-            disabled={busy !== null}
+            disabled={busy !== null || (isNative && !ready)}
             className="w-full py-4 text-sm text-gray-400 font-medium disabled:opacity-60"
           >
             {busy === "restore" ? "Restoring…" : "Already purchased? Restore Purchases"}
