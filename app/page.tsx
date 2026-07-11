@@ -3,10 +3,10 @@ import Onboarding from "./components/Onboarding";
 import RestoreLink from "./components/RestoreLink";
 
 const modules = [
-  { href: "/learn",     icon: "♩",  label: "Learn",          sub: "Start here — 5-step intro to how numbers work",       color: "text-blue-500" },
+  { href: "/learn",     icon: "♩",  label: "Learn",          sub: "Start here — learn the numbers with a song you know", color: "text-blue-500" },
   { href: "/read",      icon: "♪",  label: "Read Charts",    sub: "4 levels — basic triads up to slash chords",          color: "text-green-500" },
   { href: "/transpose", icon: "⇄",  label: "Transpose",      sub: "Move a full progression to any key",                  color: "text-orange-500" },
-  { href: "/ear",       icon: "◎",  label: "Ear Training",   sub: "3 levels — can you name the chord just by listening?", color: "text-purple-500" },
+  { href: "/ear",       icon: "◎",  label: "Ear Training",   sub: "4 levels — can you name the chord just by listening?", color: "text-purple-500" },
   { href: "/play",      icon: "♫",  label: "Play Along",     sub: "Piano & guitar shapes in every key — capo tips too",  color: "text-rose-500" },
   { href: "/cheat",     icon: "◉",  label: "Circle of 5ths", sub: "Tap any key to see all 7 chords",                     color: "text-teal-500" },
 ];
