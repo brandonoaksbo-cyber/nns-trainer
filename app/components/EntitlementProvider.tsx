@@ -58,8 +58,12 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
 
       store
         .when()
-        .approved((transaction: any) => transaction.verify())
-        .verified((receipt: any) => receipt.finish())
+        // No receipt-validation server in this app, so finish the transaction
+        // directly on approval. Calling verify() with no validator configured
+        // leaves the purchase stuck in "approved" and surfaces an error to the
+        // buyer — which is what App Review hit in build 3.
+        .approved((transaction: any) => transaction.finish())
+        .finished(() => markUnlocked(true))
         .productUpdated((product: any) => {
           if (product.id === PRODUCT_ID) {
             if (product.pricing?.price) setPrice(product.pricing.price);
