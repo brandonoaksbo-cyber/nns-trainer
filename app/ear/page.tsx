@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEntitlement } from "../components/EntitlementProvider";
 import Paywall from "../components/Paywall";
 
-// Level 1 is free; levels 2-3 need the full unlock
+// Level 1 is free; levels 2-4 need the full unlock
 const FIRST_LOCKED_LEVEL = 1;
 
 type Chord = { label: string; notes: string[] };
@@ -16,16 +16,17 @@ const KEY_OF_C_1: Chord = { label: "1", notes: ["C3","E3","G3"] };
 const LEVELS: { title: string; description: string; chords: Chord[] }[] = [
   {
     title: "Level 1",
-    description: "Major chords — 1, 4, 5",
+    description: "The big four — 1, 4, 5, 6",
     chords: [
       { label: "1", notes: ["C3","E3","G3"] },
       { label: "4", notes: ["F3","A3","C4"] },
       { label: "5", notes: ["G3","B3","D4"] },
+      { label: "6", notes: ["A3","C4","E4"] },
     ],
   },
   {
     title: "Level 2",
-    description: "Add diatonic minors — 2, 3, 6, 7",
+    description: "All 7 chords of the key",
     chords: [
       { label: "1", notes: ["C3","E3","G3"] },
       { label: "2", notes: ["D3","F3","A3"] },
@@ -37,8 +38,25 @@ const LEVELS: { title: string; description: string; chords: Chord[] }[] = [
     ],
   },
   {
+    // Every chord in this level carries a low bass note — including the
+    // plain ones — so the only way to spot a slash chord is to actually
+    // hear WHICH note is in the bass, not just that a bass note exists.
     title: "Level 3",
-    description: "Add borrowed & chromatic chords",
+    description: "Slash chords — listen to the bass",
+    chords: [
+      { label: "1",   notes: ["C3","E3","G3","C4"] },
+      { label: "4",   notes: ["F2","F3","A3","C4"] },
+      { label: "5",   notes: ["G2","G3","B3","D4"] },
+      { label: "6",   notes: ["A2","A3","C4","E4"] },
+      { label: "1/3", notes: ["E2","C3","E3","G3"] },
+      { label: "1/5", notes: ["G2","C3","E3","G3"] },
+      { label: "4/6", notes: ["A2","F3","A3","C4"] },
+      { label: "5/7", notes: ["B2","G3","B3","D4"] },
+    ],
+  },
+  {
+    title: "Level 4",
+    description: "Borrowed chords — from outside the key",
     chords: [
       { label: "1",     notes: ["C3","E3","G3"] },
       { label: "4",     notes: ["F3","A3","C4"] },
