@@ -54,6 +54,11 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
       const { store, ProductType, Platform } = CdvPurchase;
       storeRef.current = store;
 
+      // Surface plugin internals in the Xcode console while we debug the
+      // sandbox "store isn't ready" issue. Harmless in production.
+      store.verbosity = CdvPurchase.LogLevel.DEBUG;
+      store.error((err: any) => console.error("[IAP] store error", err?.code, err?.message));
+
       store.register([{ id: PRODUCT_ID, type: ProductType.NON_CONSUMABLE, platform: Platform.APPLE_APPSTORE }]);
 
       store
@@ -67,6 +72,10 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
         .productUpdated((product: any) => {
           if (product.id === PRODUCT_ID) {
             if (product.pricing?.price) setPrice(product.pricing.price);
+            // Ready means "this product can actually be bought right now" —
+            // not merely "the store booted". Build 4's sandbox test showed
+            // initialize() can resolve before (or without) the product loading.
+            if (product.canPurchase) setReady(true);
             if (product.owned) markUnlocked(true);
           }
         })
@@ -75,7 +84,22 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
           if (p) markUnlocked(!!p.owned);
         });
 
-      store.initialize([Platform.APPLE_APPSTORE]).then(() => setReady(true));
+      store.initialize([Platform.APPLE_APPSTORE]).then(() => {
+        // If the catalog didn't arrive with initialize, poll for it — slow
+        // networks and freshly-created sandbox products can lag. Give up
+        // after ~90s; the button stays in its "Loading…" state meanwhile.
+        let attempts = 0;
+        const poll = setInterval(() => {
+          const p = store.get(PRODUCT_ID, Platform.APPLE_APPSTORE);
+          if (p?.canPurchase || attempts++ >= 18) {
+            clearInterval(poll);
+            if (p?.canPurchase) setReady(true);
+            return;
+          }
+          console.warn(`[IAP] product not loaded yet (attempt ${attempts}) — refreshing`);
+          store.update();
+        }, 5000);
+      });
     };
 
     if ((window as any).CdvPurchase) init();
