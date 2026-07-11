@@ -50,3 +50,52 @@ export const SONGS: Song[] = [
 export function getSong(id: string): Song | undefined {
   return SONGS.find((s) => s.id === id);
 }
+
+// ————— Key math shared by Read Charts / Transpose / Learn —————
+
+export const SCALE_MAP: Record<string, string[]> = {
+  C:  ["C","Dm","Em","F","G","Am","Bdim"],
+  D:  ["D","Em","F#m","G","A","Bm","C#dim"],
+  E:  ["E","F#m","G#m","A","B","C#m","D#dim"],
+  F:  ["F","Gm","Am","Bb","C","Dm","Edim"],
+  G:  ["G","Am","Bm","C","D","Em","F#dim"],
+  A:  ["A","Bm","C#m","D","E","F#m","G#dim"],
+  B:  ["B","C#m","D#m","E","F#","G#m","A#dim"],
+  Bb: ["Bb","Cm","Dm","Eb","F","Gm","Adim"],
+  Eb: ["Eb","Fm","Gm","Ab","Bb","Cm","Ddim"],
+  Ab: ["Ab","Bbm","Cm","Db","Eb","Fm","Gdim"],
+  Db: ["Db","Ebm","Fm","Gb","Ab","Bbm","Cdim"],
+  "F#": ["F#","G#m","A#m","B","C#","D#m","Fdim"],
+};
+
+export const ROOT_MAP: Record<string, string[]> = {
+  C:  ["C","D","E","F","G","A","B"],
+  D:  ["D","E","F#","G","A","B","C#"],
+  E:  ["E","F#","G#","A","B","C#","D#"],
+  F:  ["F","G","A","Bb","C","D","E"],
+  G:  ["G","A","B","C","D","E","F#"],
+  A:  ["A","B","C#","D","E","F#","G#"],
+  B:  ["B","C#","D#","E","F#","G#","A#"],
+  Bb: ["Bb","C","D","Eb","F","G","A"],
+  Eb: ["Eb","F","G","Ab","Bb","C","D"],
+  Ab: ["Ab","Bb","C","Db","Eb","F","G"],
+  Db: ["Db","Eb","F","Gb","Ab","Bb","C"],
+  "F#": ["F#","G#","A#","B","C#","D#","E#"],
+};
+
+// Resolve a number token ("1", "6m", "2m", "1/3") to a chord name in a key.
+// Quality (m/dim) comes from SCALE_MAP, so the m suffix in the token is
+// display-only; slash bass notes resolve through ROOT_MAP.
+export function resolveToken(token: string, key: string): string {
+  const [base, bass] = token.split("/");
+  const deg = parseInt(base, 10);
+  if (isNaN(deg) || deg < 1 || deg > 7) return token;
+  let name = SCALE_MAP[key][deg - 1];
+  if (bass) {
+    const bassDeg = parseInt(bass, 10);
+    if (!isNaN(bassDeg) && bassDeg >= 1 && bassDeg <= 7) {
+      name += "/" + ROOT_MAP[key][bassDeg - 1];
+    }
+  }
+  return name;
+}

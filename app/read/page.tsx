@@ -4,42 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useEntitlement } from "../components/EntitlementProvider";
 import Paywall from "../components/Paywall";
+import { SONGS, SCALE_MAP, ROOT_MAP, resolveToken } from "../lib/songs";
 
 // Level 1 is free; levels 2-4 need the full unlock
 const FIRST_LOCKED_LEVEL = 1;
 
-const SCALE_MAP: Record<string, string[]> = {
-  C:  ["C","Dm","Em","F","G","Am","Bdim"],
-  D:  ["D","Em","F#m","G","A","Bm","C#dim"],
-  E:  ["E","F#m","G#m","A","B","C#m","D#dim"],
-  F:  ["F","Gm","Am","Bb","C","Dm","Edim"],
-  G:  ["G","Am","Bm","C","D","Em","F#dim"],
-  A:  ["A","Bm","C#m","D","E","F#m","G#dim"],
-  B:  ["B","C#m","D#m","E","F#","G#m","A#dim"],
-  Bb: ["Bb","Cm","Dm","Eb","F","Gm","Adim"],
-  Eb: ["Eb","Fm","Gm","Ab","Bb","Cm","Ddim"],
-  Ab: ["Ab","Bbm","Cm","Db","Eb","Fm","Gdim"],
-  Db: ["Db","Ebm","Fm","Gb","Ab","Bbm","Cdim"],
-  "F#": ["F#","G#m","A#m","B","C#","D#m","Fdim"],
-};
-
 const KEYS = Object.keys(SCALE_MAP);
-
-// Root note of each scale degree (no quality suffix)
-const ROOT_MAP: Record<string, string[]> = {
-  C:  ["C","D","E","F","G","A","B"],
-  D:  ["D","E","F#","G","A","B","C#"],
-  E:  ["E","F#","G#","A","B","C#","D#"],
-  F:  ["F","G","A","Bb","C","D","E"],
-  G:  ["G","A","B","C","D","E","F#"],
-  A:  ["A","B","C#","D","E","F#","G#"],
-  B:  ["B","C#","D#","E","F#","G#","A#"],
-  Bb: ["Bb","C","D","Eb","F","G","A"],
-  Eb: ["Eb","F","G","Ab","Bb","C","D"],
-  Ab: ["Ab","Bb","C","Db","Eb","F","G"],
-  Db: ["Db","Eb","F","Gb","Ab","Bb","C"],
-  "F#": ["F#","G#","A#","B","C#","D#","E#"],
-};
 
 // Borrowed chord labels → chord name resolver (key of any)
 const BORROWED: Record<string, (key: string) => string> = {
@@ -112,7 +82,10 @@ function resolveCell(cell: Cell, key: string): string {
   return SCALE_MAP[key][n - 1];
 }
 
+const SONG = SONGS[0];
+
 export default function ReadPage() {
+  const [mode, setMode] = useState<"song" | "practice">("song");
   const [key, setKey] = useState("C");
   const [levelIdx, setLevelIdx] = useState(0);
   const [chartIdx, setChartIdx] = useState(0);
@@ -140,6 +113,21 @@ export default function ReadPage() {
       <h1 className="text-4xl font-bold text-[#1d1d1f] tracking-tight mb-2">Read Charts</h1>
       <p className="text-gray-500 mb-6">Pick a key, read the numbers, then reveal to check.</p>
 
+      {/* Mode toggle */}
+      <div className="bg-white rounded-2xl p-1.5 shadow-sm flex gap-1 mb-4">
+        {([["song", SONG.title], ["practice", "Practice"]] as const).map(([m, label]) => (
+          <button
+            key={m}
+            onClick={() => { setMode(m); setRevealed(false); }}
+            className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition ${
+              mode === m ? "bg-green-500 text-white shadow-sm" : "text-gray-400 hover:text-gray-600"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Key selector */}
       <div className="mb-4">
         <label className="text-xs font-semibold tracking-widest text-gray-400 uppercase block mb-2">Key</label>
@@ -152,6 +140,68 @@ export default function ReadPage() {
         </select>
       </div>
 
+      {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
+
+      {mode === "song" && (
+        <>
+          <div className="mb-2">
+            <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-1">
+              {SONG.title} · <span className="normal-case">{SONG.artist}</span>
+            </p>
+            <p className="text-xs text-gray-400 mb-4">
+              A real chart. Read the numbers in <span className="font-semibold normal-case">{key}</span>, then reveal to check.
+            </p>
+            <div className="space-y-3">
+              {SONG.sections.map((section) => (
+                <div key={section.label} className="bg-white rounded-2xl p-5 shadow-sm">
+                  <p className="text-xs text-gray-400 font-medium mb-3">
+                    {section.label}{section.repeat ? ` ×${section.repeat}` : ""}
+                  </p>
+                  <div className="grid grid-cols-4 gap-3">
+                    {section.bars.map((token, i) => (
+                      <div key={i} className="text-center">
+                        <div className={`text-2xl font-bold mb-2 normal-case ${token.includes("/") ? "text-purple-500" : "text-[#1d1d1f]"}`}>
+                          {token}
+                        </div>
+                        {revealed && (
+                          <div className="text-sm font-medium text-green-600 bg-green-50 rounded-lg py-1 px-1 normal-case">
+                            {resolveToken(token, key)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="text-xs text-purple-400 text-center mb-4 mt-4">Purple = slash chord — chord name / bass note</p>
+
+          {revealed && (
+            <div className="bg-white rounded-2xl p-5 shadow-sm mb-4">
+              <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">Key of <span className="normal-case">{key}</span></p>
+              <div className="flex gap-3">
+                {SCALE_MAP[key].map((chord, i) => (
+                  <div key={i} className="text-center flex-1">
+                    <p className="text-xs text-gray-400 mb-1">{i + 1}</p>
+                    <p className="font-semibold text-[#1d1d1f] text-sm normal-case">{chord}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={() => setRevealed(!revealed)}
+            className="w-full bg-green-500 hover:bg-green-600 text-white rounded-2xl py-4 font-semibold transition mt-4"
+          >
+            {revealed ? "Hide Chords" : "Reveal Chords"}
+          </button>
+        </>
+      )}
+
+      {mode === "practice" && (
+        <>
       {/* Level tabs */}
       <div className="bg-white rounded-2xl p-1.5 shadow-sm flex gap-1 mb-2">
         {LEVELS.map((l, i) => (
@@ -167,8 +217,6 @@ export default function ReadPage() {
         ))}
       </div>
       <p className="text-xs text-gray-400 text-center mb-6">{level.description}</p>
-
-      {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
 
       {/* Chart */}
       <div className="mb-2">
@@ -234,6 +282,8 @@ export default function ReadPage() {
           Next
         </button>
       </div>
+        </>
+      )}
     </main>
   );
 }

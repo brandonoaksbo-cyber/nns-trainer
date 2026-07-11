@@ -4,23 +4,11 @@ import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useEntitlement } from "../components/EntitlementProvider";
 import Paywall from "../components/Paywall";
-
-const SCALE_MAP: Record<string, string[]> = {
-  C:  ["C","Dm","Em","F","G","Am","Bdim"],
-  D:  ["D","Em","F#m","G","A","Bm","C#dim"],
-  E:  ["E","F#m","G#m","A","B","C#m","D#dim"],
-  F:  ["F","Gm","Am","Bb","C","Dm","Edim"],
-  G:  ["G","Am","Bm","C","D","Em","F#dim"],
-  A:  ["A","Bm","C#m","D","E","F#m","G#dim"],
-  B:  ["B","C#m","D#m","E","F#","G#m","A#dim"],
-  Bb: ["Bb","Cm","Dm","Eb","F","Gm","Adim"],
-  Eb: ["Eb","Fm","Gm","Ab","Bb","Cm","Ddim"],
-  Ab: ["Ab","Bbm","Cm","Db","Eb","Fm","Gdim"],
-  Db: ["Db","Ebm","Fm","Gb","Ab","Bbm","Cdim"],
-  "F#": ["F#","G#m","A#m","B","C#","D#m","Fdim"],
-};
+import { SONGS, SCALE_MAP, resolveToken } from "../lib/songs";
 
 const KEYS = Object.keys(SCALE_MAP);
+const SONG = SONGS[0];
+const SONG_SECTION = SONG.sections.find(s => s.label === "Chorus") ?? SONG.sections[0];
 
 const PROGRESSIONS = [
   { name: "The Big Four",    nums: [1, 5, 6, 4] },
@@ -43,28 +31,45 @@ function buildRound(progNums: number[]) {
   return { fromKey, toKey };
 }
 
+function randomToKey(exclude: string): string {
+  let k = randomKey();
+  while (k === exclude) k = randomKey();
+  return k;
+}
+
 export default function TransposePage() {
+  const [mode, setMode] = useState<"song" | "practice">("song");
   const [progIdx, setProgIdx] = useState(0);
   const [round, setRound] = useState<ReturnType<typeof buildRound> | null>(null);
+  const [songToKey, setSongToKey] = useState<string | null>(null);
 
   useEffect(() => {
     setRound(buildRound(PROGRESSIONS[0].nums));
+    setSongToKey(randomToKey(SONG.originalKey));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [revealed, setRevealed] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
 
   const next = useCallback(() => {
-    setRound(buildRound(PROGRESSIONS[progIdx].nums));
+    if (mode === "song") {
+      setSongToKey(prev => randomToKey(prev ?? SONG.originalKey));
+    } else {
+      setRound(buildRound(PROGRESSIONS[progIdx].nums));
+    }
     setRevealed(false);
-  }, [progIdx]);
+  }, [mode, progIdx]);
 
   const { isUnlocked } = useEntitlement();
 
   if (!isUnlocked) return <Paywall />;
-  if (!round) return null;
+  if (!round || !songToKey) return null;
   const progression = PROGRESSIONS[progIdx];
-  const { fromKey, toKey } = round;
+
+  const isSong = mode === "song";
+  const fromKey = isSong ? SONG.originalKey : round.fromKey;
+  const toKey = isSong ? songToKey : round.toKey;
+  const tokens = isSong ? SONG_SECTION.bars : progression.nums.map(String);
 
   function handleReveal() {
     if (!revealed) {
@@ -94,20 +99,44 @@ export default function TransposePage() {
         </div>
       </div>
 
-      {/* Progression selector */}
-      <div className="bg-white rounded-2xl p-1.5 shadow-sm flex gap-1 mb-8">
-        {PROGRESSIONS.map((p, i) => (
+      {/* Mode toggle */}
+      <div className="bg-white rounded-2xl p-1.5 shadow-sm flex gap-1 mb-3">
+        {([["song", SONG.title], ["practice", "Practice"]] as const).map(([m, label]) => (
           <button
-            key={i}
-            onClick={() => changeProgression(i)}
-            className={`flex-1 rounded-xl py-2 text-xs font-semibold transition ${
-              i === progIdx ? "bg-orange-500 text-white shadow-sm" : "text-gray-400 hover:text-gray-600"
+            key={m}
+            onClick={() => { setMode(m); setRevealed(false); }}
+            className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition ${
+              mode === m ? "bg-orange-500 text-white shadow-sm" : "text-gray-400 hover:text-gray-600"
             }`}
           >
-            {p.name}
+            {label}
           </button>
         ))}
       </div>
+
+      {/* Progression selector (practice only) */}
+      {!isSong && (
+        <div className="bg-white rounded-2xl p-1.5 shadow-sm flex gap-1 mb-8">
+          {PROGRESSIONS.map((p, i) => (
+            <button
+              key={i}
+              onClick={() => changeProgression(i)}
+              className={`flex-1 rounded-xl py-2 text-xs font-semibold transition ${
+                i === progIdx ? "bg-orange-500 text-white shadow-sm" : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              {p.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {isSong && (
+        <p className="text-sm text-gray-500 mb-5 leading-relaxed">
+          <strong className="text-[#1d1d1f]">{SONG_SECTION.label} of {SONG.title}</strong> — your vocalist wants it in{" "}
+          <strong className="text-blue-500 normal-case">{toKey}</strong>. Same numbers, new letters.
+        </p>
+      )}
 
       {/* From key */}
       <div className="bg-white rounded-2xl p-6 shadow-sm mb-3">
@@ -115,12 +144,12 @@ export default function TransposePage() {
           Original — Key of <span className="text-orange-500 normal-case">{fromKey}</span>
         </p>
         <div className="grid grid-cols-4 gap-3">
-          {progression.nums.map((num, i) => (
+          {tokens.map((token, i) => (
             <div key={i} className="flex flex-col items-center gap-2">
-              <div className="w-full aspect-square rounded-xl bg-[#f5f5f7] flex items-center justify-center text-2xl font-bold text-[#1d1d1f]">
-                {num}
+              <div className="w-full aspect-square rounded-xl bg-[#f5f5f7] flex items-center justify-center text-2xl font-bold text-[#1d1d1f] normal-case">
+                {token}
               </div>
-              <p className="text-sm font-medium text-gray-500">{getChord(num, fromKey)}</p>
+              <p className="text-sm font-medium text-gray-500 normal-case">{resolveToken(token, fromKey)}</p>
             </div>
           ))}
         </div>
@@ -130,18 +159,18 @@ export default function TransposePage() {
       <div className="text-center text-gray-300 text-2xl mb-3">↓</div>
 
       {/* To key */}
-      <div className={`rounded-2xl p-6 shadow-sm mb-6 transition ${revealed ? "bg-white" : "bg-white"}`}>
+      <div className="rounded-2xl p-6 shadow-sm mb-6 bg-white">
         <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-4">
           Transposed — Key of <span className="text-blue-500 normal-case">{toKey}</span>
         </p>
         <div className="grid grid-cols-4 gap-3">
-          {progression.nums.map((num, i) => (
+          {tokens.map((token, i) => (
             <div key={i} className="flex flex-col items-center gap-2">
-              <div className="w-full aspect-square rounded-xl bg-[#f5f5f7] flex items-center justify-center text-2xl font-bold text-[#1d1d1f]">
-                {num}
+              <div className="w-full aspect-square rounded-xl bg-[#f5f5f7] flex items-center justify-center text-2xl font-bold text-[#1d1d1f] normal-case">
+                {token}
               </div>
               {revealed ? (
-                <p className="text-sm font-semibold text-blue-500">{getChord(num, toKey)}</p>
+                <p className="text-sm font-semibold text-blue-500 normal-case">{resolveToken(token, toKey)}</p>
               ) : (
                 <div className="h-5 w-12 bg-gray-100 rounded-md" />
               )}
@@ -163,7 +192,7 @@ export default function TransposePage() {
             onClick={next}
             className="flex-1 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl py-4 font-semibold transition"
           >
-            Next Progression →
+            {isSong ? "New Key →" : "Next Progression →"}
           </button>
         )}
       </div>
