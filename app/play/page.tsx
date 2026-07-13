@@ -6,6 +6,7 @@ import PianoChord from "./piano";
 import { useEntitlement } from "../components/EntitlementProvider";
 import Paywall from "../components/Paywall";
 import GuitarChord, { GUITAR_CHORDS } from "./guitar";
+import Drill from "./drill";
 
 const SCALE_MAP: Record<string, string[]> = {
   C:  ["C","Dm","Em","F","G","Am","Bdim"],
@@ -22,7 +23,7 @@ const SCALE_MAP: Record<string, string[]> = {
 };
 
 const KEYS = Object.keys(SCALE_MAP);
-const INSTRUMENTS = ["Piano", "Guitar"] as const;
+const INSTRUMENTS = ["Piano", "Guitar", "Drill"] as const;
 type Instrument = typeof INSTRUMENTS[number];
 
 // Worship piano voicings — spread, open, modern. Notes include octave number (C3, E4, etc.)
@@ -150,6 +151,7 @@ export default function PlayPage() {
             {KEYS.map((k) => <option key={k}>{k}</option>)}
           </select>
         </div>
+        {instrument !== "Drill" && (
         <div className="flex-[2]">
           <label className="text-xs font-semibold tracking-widest text-gray-400 uppercase block mb-2">Progression</label>
           <select
@@ -160,7 +162,10 @@ export default function PlayPage() {
             {PROGRESSIONS.map((p, i) => <option key={i} value={i}>{p.label}</option>)}
           </select>
         </div>
+        )}
       </div>
+
+      {instrument === "Drill" && <Drill keyName={key} />}
 
       {/* Capo tip — guitar only, hard keys only */}
       {instrument === "Guitar" && CAPO_MAP[key] && (
@@ -176,6 +181,8 @@ export default function PlayPage() {
       )}
 
       {/* Chord cards */}
+      {instrument !== "Drill" && (
+      <>
       <div className="grid grid-cols-4 gap-3 mb-4">
         {progression.nums.map((num, i) => {
           const chordName = getChordName(num, key);
@@ -205,6 +212,8 @@ export default function PlayPage() {
       >
         {revealed ? "Hide chord names" : "Reveal chord names"}
       </button>
+      </>
+      )}
 
       {/* Diagram panel */}
       {activeIdx !== null && (() => {
