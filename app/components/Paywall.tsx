@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useEntitlement } from "./EntitlementProvider";
 
@@ -14,11 +15,19 @@ const INCLUDED = [
 // Full-screen paywall. Rendered in place of locked content (module gate) or
 // on top of it (level gate, via onClose).
 export default function Paywall({ onClose }: { onClose?: () => void }) {
-  const { price, busy, ready, isNative, purchase, restore } = useEntitlement();
+  const { isUnlocked, price, busy, ready, isNative, purchase, restore } = useEntitlement();
   // On native, wait for StoreKit to finish loading the product catalog before
   // the button is tappable — this is what caused Apple's review rejection
   // (tapping before the catalog loaded produced no response at all).
   const buyDisabled = busy !== null || (isNative && !ready);
+
+  // The moment the unlock lands (purchase, restore, or Family Sharing),
+  // dismiss the overlay — pages that show the paywall via local state
+  // (ear/read level gates) otherwise leave it up after a successful buy.
+  useEffect(() => {
+    if (isUnlocked) onClose?.();
+  }, [isUnlocked, onClose]);
+  if (isUnlocked) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-[#f5f5f7] overflow-y-auto">
