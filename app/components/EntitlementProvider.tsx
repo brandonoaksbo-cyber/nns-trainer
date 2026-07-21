@@ -43,9 +43,13 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
     // Fast paint from cache while StoreKit initializes
     if (localStorage.getItem(CACHE_KEY) === "1") setIsUnlocked(true);
 
-    const markUnlocked = (owned: boolean) => {
-      setIsUnlocked(owned);
-      localStorage.setItem(CACHE_KEY, owned ? "1" : "0");
+    // Positive signals only. A non-consumable cannot be un-bought, and early
+    // receipt events on cold launch report not-owned before ownership is
+    // established — downgrading on those locked paying customers out on every
+    // launch (the 1.1.0 re-paywall bug). Never write "locked" over the cache.
+    const markUnlocked = () => {
+      setIsUnlocked(true);
+      localStorage.setItem(CACHE_KEY, "1");
     };
 
     const init = () => {
@@ -68,7 +72,7 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
         // leaves the purchase stuck in "approved" and surfaces an error to the
         // buyer — which is what App Review hit in build 3.
         .approved((transaction: any) => transaction.finish())
-        .finished(() => markUnlocked(true))
+        .finished(() => markUnlocked())
         .productUpdated((product: any) => {
           if (product.id === PRODUCT_ID) {
             if (product.pricing?.price) setPrice(product.pricing.price);
@@ -76,12 +80,12 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
             // not merely "the store booted". Build 4's sandbox test showed
             // initialize() can resolve before (or without) the product loading.
             if (product.canPurchase) setReady(true);
-            if (product.owned) markUnlocked(true);
+            if (product.owned) markUnlocked();
           }
         })
         .receiptUpdated(() => {
           const p = store.get(PRODUCT_ID, Platform.APPLE_APPSTORE);
-          if (p) markUnlocked(!!p.owned);
+          if (p?.owned) markUnlocked();
         });
 
       store.initialize([Platform.APPLE_APPSTORE]).then(() => {
